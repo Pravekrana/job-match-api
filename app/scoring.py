@@ -1,6 +1,14 @@
 """Pure scorer shared by forward and reverse recommendations. No database or HTTP."""
 
-from app.schemas import Breakdown, CandidateCreate, Contribution, JobCreate, Match, Weights, normalize
+from app.schemas import (
+    Breakdown,
+    CandidateCreate,
+    Contribution,
+    JobCreate,
+    Match,
+    Weights,
+    normalize,
+)
 
 
 def score_match(
@@ -19,7 +27,8 @@ def score_match(
     skill_factor = 0.8 + 0.2 * matched / len(nice) if nice else 1.0
     experience_factor = (
         min(candidate.yearsOfExperience / job.minYearsExperience, 1.0)
-        if job.minYearsExperience else 1.0
+        if job.minYearsExperience
+        else 1.0
     )
     if normalize(candidate.location) == normalize(job.location):
         location_factor, location_reason = 1.0, "Exact normalized location match"
@@ -44,11 +53,13 @@ def score_match(
 
     breakdown = Breakdown(
         skills=contribution(
-            skill_factor, weights.skills,
+            skill_factor,
+            weights.skills,
             f"All {len(must)} must-have skills met; {matched}/{len(nice)} nice-to-have skills met",
         ),
         experience=contribution(
-            experience_factor, weights.experience,
+            experience_factor,
+            weights.experience,
             f"{candidate.yearsOfExperience:g} years against {job.minYearsExperience:g} minimum; "
             + ("minimum met" if experience_factor == 1 else "proportional shortfall penalty"),
         ),
