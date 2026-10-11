@@ -124,13 +124,14 @@ def create_app(database_url: str | None = None) -> FastAPI:
         session: Db,
         weights: WeightDependency,
         limit: Limit = 10,
+        minScore: float = Query(default=0, ge=0, le=100, allow_inf_nan=False),
     ):
         candidate = get_candidate(candidate_id, session)
         recommendations = []
         for row in session.scalars(select(JobRow)):
             job = Job.model_validate(row, from_attributes=True)
             match = score_match(candidate, job, weights)
-            if match is not None:
+            if match is not None and match.overallScore >= minScore:
                 recommendations.append(JobRecommendation(job=job, **match.model_dump()))
         recommendations.sort(key=lambda item: (-item.overallScore, item.job.id))
         return recommendations[:limit]
@@ -145,13 +146,14 @@ def create_app(database_url: str | None = None) -> FastAPI:
         session: Db,
         weights: WeightDependency,
         limit: Limit = 10,
+        minScore: float = Query(default=0, ge=0, le=100, allow_inf_nan=False),
     ):
         job = get_job(job_id, session)
         recommendations = []
         for row in session.scalars(select(CandidateRow)):
             candidate = Candidate.model_validate(row, from_attributes=True)
             match = score_match(candidate, job, weights)
-            if match is not None:
+            if match is not None and match.overallScore >= minScore:
                 recommendations.append(
                     CandidateRecommendation(candidate=candidate, **match.model_dump())
                 )
