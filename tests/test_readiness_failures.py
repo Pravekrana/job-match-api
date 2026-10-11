@@ -21,3 +21,9 @@ def test_readiness_failure_and_recovery(client):
         client.app.dependency_overrides.clear()
     assert client.get("/health").json() == {"status": "ok"}
     assert client.get("/live").status_code == 200
+
+
+def test_readiness_openapi_contract(client):
+    paths = client.get("/openapi.json").json()["paths"]
+    assert "503" in paths["/health"]["get"]["responses"]
+    assert "/live" in paths

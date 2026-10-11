@@ -82,7 +82,11 @@ def create_app(database_url: str | None = None) -> FastAPI:
         description="Explainable recommendations. Must-have skills are always a hard filter.",
     )
 
-    @api.get("/health", tags=["Operations"])
+    @api.get(
+        "/health",
+        tags=["Operations"],
+        responses={503: {"description": "Database unavailable"}},
+    )
     def health(session: Db):
         try:
             session.execute(text("SELECT 1"))
