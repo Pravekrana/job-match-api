@@ -86,6 +86,16 @@ def create_app(database_url: str | None = None) -> FastAPI:
         session.execute(text("SELECT 1"))
         return {"status": "ok"}
 
+    @api.get("/candidates", response_model=list[Candidate], tags=["Candidates"])
+    def list_candidates(session: Db, limit: Limit = 10, offset: int = Query(default=0, ge=0)):
+        rows = session.scalars(select(CandidateRow).order_by(CandidateRow.id).offset(offset).limit(limit))
+        return [Candidate.model_validate(row, from_attributes=True) for row in rows]
+
+    @api.get("/jobs", response_model=list[Job], tags=["Jobs"])
+    def list_jobs(session: Db, limit: Limit = 10, offset: int = Query(default=0, ge=0)):
+        rows = session.scalars(select(JobRow).order_by(JobRow.id).offset(offset).limit(limit))
+        return [Job.model_validate(row, from_attributes=True) for row in rows]
+
     @api.post("/candidates", response_model=Candidate, status_code=201, tags=["Candidates"])
     def create_candidate(payload: CandidateCreate, session: Db, response: Response):
         record = CandidateRow(**payload.model_dump())
