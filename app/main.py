@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Path, Query, Request, Response
 from pydantic import ValidationError
 from sqlalchemy import select, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database import Base, CandidateRow, JobRow, make_engine
@@ -81,9 +82,20 @@ def create_app(database_url: str | None = None) -> FastAPI:
         description="Explainable recommendations. Must-have skills are always a hard filter.",
     )
 
-    @api.get("/health", tags=["Operations"])
+    @api.get(
+        "/health",
+        tags=["Operations"],
+        responses={503: {"description": "Database unavailable"}},
+    )
     def health(session: Db):
-        session.execute(text("SELECT 1"))
+        try:
+            session.execute(text("SELECT 1"))
+        except SQLAlchemyError:
+            raise HTTPException(503, "Database unavailable") from None
+        return {"status": "ok"}
+
+    @api.get("/live", tags=["Operations"])
+    def live():
         return {"status": "ok"}
 
     @api.post("/candidates", response_model=Candidate, status_code=201, tags=["Candidates"])
